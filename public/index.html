@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindIt</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Cesium.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/index.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gray-100">
+    <!-- Project name -->
+    <div class="project-title text-center py-4">
+        <h1 class="text-4xl font-bold text-white bg-primary bg-opacity-70 rounded-lg inline-block px-6 py-2 shadow-lg">FINDIT</h1>
+    </div>
+    <div class="container mx-auto p-4 h-screen flex flex-col">
+        <div class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
+            <div id="globeContainer" class="w-full md:w-1/2 transition-all duration-300 ease-in-out relative">
+                <div id="cesiumContainer" class="h-full rounded-lg overflow-hidden"></div>
+                <select id="modeSelector" class="absolute top-2 right-2 p-2 rounded bg-white border border-gray-300 z-10">
+                    <option value="natgeo">ESRI National Geographic</option>
+                    <option value="osm">OpenStreetMap</option>
+                    <option value="bing">Bing Maps Aerial</option>
+                </select>
+                <div id="toggleGlobe" class="absolute top-1/2 -right-6 transform -translate-y-1/2 bg-white p-2 rounded-r-lg cursor-pointer shadow-md">
+                    <i class="fas fa-chevron-left toggle-arrow"></i>
+                </div>
+            </div>
+            <div class="flex-grow overflow-hidden flex flex-col">
+                <div class="bg-white bg-opacity-80 rounded-lg p-4 mb-4 shadow-md">
+                    <input type="text" id="searchInput" placeholder="Enter place name" class="w-full p-2 rounded border border-gray-300">
+                    <button id="searchButton" class="mt-2 w-full bg-primary text-white p-2 rounded hover:bg-primary-dark transition-colors">Search</button>
+                </div>
+                <div class="overflow-y-auto custom-scrollbar flex-grow">
+                    <div id="weatherInfo" class="bg-white bg-opacity-80 rounded-lg p-4 mb-4 shadow-md card">
+                        <h3 class="text-xl font-bold mb-2">Weather Information</h3>
+                        <div id="weatherData"></div>
+                    </div>
+                    <div id="tourismInfo" class="space-y-4">
+                        <div id="restaurantsData" class="bg-white bg-opacity-80 rounded-lg p-4 shadow-md card">
+                            <h3 class="text-xl font-bold mb-2">Restaurants</h3>
+                        </div>
+                        <div id="atmData" class="bg-white bg-opacity-80 rounded-lg p-4 shadow-md card">
+                            <h3 class="text-xl font-bold mb-2">ATMs</h3>
+                        </div>
+                        <div id="fuelData" class="bg-white bg-opacity-80 rounded-lg p-4 shadow-md card">
+                            <h3 class="text-xl font-bold mb-2">Fuel Stations</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Your Cesium ion access token
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiYjYyNTc2My0zODZlLTQ2YzAtYjVhYy0wZGZmNTgzYTk4MjMiLCJpZCI6MjQ5MjgwLCJpYXQiOjE3MjkzMjc5NzZ9.104hJ5y6X9ukGymb_Iqy_mI3PReD00m1bnRqdoNPcd4';
+
+        // Initialize the Cesium Viewer
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+                url: 'https://services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer'
+            }),
+            baseLayerPicker: false,
+            geocoder: false,
+            homeButton: false,
+            sceneModePicker: false,
+            navigationHelpButton: false,
+            animation: false,
+            timeline: false,
+            fullscreenButton: false
+        });
+
+        // Remove the default Cesium logo
+        viewer._cesiumWidget._creditContainer.style.display = "none";
+
+        // Geocoding function (place name to coordinates)
+        async function geocode(placeName) {
+            try {
+                const response = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}`);
+                if (response.data && response.data.length > 0) {
+                    const { lat, lon } = response.data[0];
+                    return { latitude: parseFloat(lat), longitude: parseFloat(lon) };
+                }
+                throw new Error('Location not found');
+            } catch (error) {
+                console.error('Geocoding error:', error);
+                return null;
+            }
+        }
+
+        // Reverse geocoding function (coordinates to place name)
+        async function reverseGeocode(latitude, longitude) {
+            try {
+                const response = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                if (response.data && response.data.display_name) {
+                    return response.data.display_name;
+                }
+                throw new Error('Place name not found');
+            } catch (error) {
+                console.error('Reverse geocoding error:', error);
+                return null;
+            }
+        }
+
+        // Function to fly to a location
+        function flyToLocation(latitude, longitude) {
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 1000000.0)
+            });
+        }
+
+        // Add click event listener to the globe
+        viewer.canvas.addEventListener('click', async function(event) {
+            const mousePosition = new Cesium.Cartesian2(event.clientX, event.clientY);
+            const ellipsoid = viewer.scene.globe.ellipsoid;
+            const cartesian = viewer.camera.pickEllipsoid(mousePosition, ellipsoid);
+            if (cartesian) {
+                const cartographic = ellipsoid.cartesianToCartographic(cartesian);
+                const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+                const placeName = await reverseGeocode(latitude, longitude);
+                if (placeName) {
+                    document.getElementById('searchInput').value = placeName;
+                    await updateLocationInfo(latitude, longitude);
+                }
+            }
+        });
+
+        // Function to update weather information
+        async function updateWeatherInfo(latitude, longitude) {
+            try {
+                const response = await axios.get(`/api/weather?lat=${latitude}&lon=${longitude}`);
+                const weatherData = response.data;
+                document.getElementById('weatherData').innerHTML = `
+                    <p class="mb-2"><span class="font-bold">Temperature:</span> ${weatherData.main.temp}°C</p>
+                    <p class="mb-2"><span class="font-bold">Humidity:</span> ${weatherData.main.humidity}%</p>
+                    <p><span class="font-bold">Weather:</span> ${weatherData.weather[0].description}</p>
+                `;
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                document.getElementById('weatherData').innerHTML = '<p class="text-red-500">Failed to fetch weather data</p>';
+            }
+        }
+
+        // Function to update tourism information
+        async function updateTourismInfo(latitude, longitude) {
+            try {
+                const response = await axios.get(`/api/tourism?lat=${latitude}&lon=${longitude}`);
+                const tourismData = response.data;
+
+                // Clear existing data
+                document.getElementById('restaurantsData').innerHTML = '<h3 class="text-xl font-bold mb-2">Restaurants</h3>';
+                document.getElementById('atmData').innerHTML = '<h3 class="text-xl font-bold mb-2">ATMs</h3>';
+                document.getElementById('fuelData').innerHTML = '<h3 class="text-xl font-bold mb-2">Fuel Stations</h3>';
+
+                // Display restaurants
+                tourismData.restaurants.forEach(restaurant => {
+                    const name = restaurant.properties.name || 'Unknown restaurant';
+                    const address = restaurant.properties.formatted || 'Address not available';
+                    const cuisine = restaurant.properties.catering && restaurant.properties.catering.cuisine
+                        ? restaurant.properties.catering.cuisine 
+                        : 'Unknown cuisine';
+                    document.getElementById('restaurantsData').innerHTML += `
+                        <div class="mb-4 p-3 bg-white rounded-lg shadow">
+                            <h4 class="font-bold">${name}</h4>
+                            <p class="text-sm"><span class="font-semibold">Address:</span> ${address}</p>
+                            <p class="text-sm"><span class="font-semibold">Cuisine:</span> ${cuisine}</p>
+                        </div>
+                    `;
+                });
+
+                // Display ATMs
+                tourismData.atms.forEach(atm => {
+                    const name = atm.properties.name || 'ATM';
+                    const address = atm.properties.formatted || 'Address not available';
+                    document.getElementById('atmData').innerHTML += `
+                        <div class="mb-4 p-3 bg-white rounded-lg shadow">
+                            <h4 class="font-bold">${name}</h4>
+                            <p class="text-sm"><span class="font-semibold">Address:</span> ${address}</p>
+                        </div>
+                    `;
+                });
+
+                // Display fuel stations
+                tourismData.fuelStations.forEach(fuel => {
+                    const name = fuel.properties.name || 'Fuel Station';
+                    const address = fuel.properties.formatted || 'Address not available';
+                    const opening_h = fuel.properties.opening_hours || 'Timings Not Available';
+                    document.getElementById('fuelData').innerHTML += `
+                        <div class="mb-4 p-3 bg-white rounded-lg shadow">
+                            <h4 class="font-bold">${name}</h4>
+                            <p class="text-sm"><span class="font-semibold">Address:</span> ${address}</p>
+                            <p class="text-sm"><span class="font-semibold">Opening Hours:</span> ${opening_h}</p>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error fetching tourism data:', error);
+                document.getElementById('tourismInfo').innerHTML = '<p class="text-red-500">Failed to fetch tourism data</p>';
+            }
+        }
+
+        // Function to update all location information
+        async function updateLocationInfo(latitude, longitude) {
+            await updateWeatherInfo(latitude, longitude);
+            await updateTourismInfo(latitude, longitude);
+        }
+
+        // Add search functionality
+        document.getElementById('searchButton').addEventListener('click', async function() {
+            const searchValue = document.getElementById('searchInput').value;
+            const coordinates = await geocode(searchValue);
+            if (coordinates) {
+                flyToLocation(coordinates.latitude, coordinates.longitude);
+                await updateLocationInfo(coordinates.latitude, coordinates.longitude);
+            } else {
+                alert('Location not found. Please try a different search term.');
+            }
+        });
+
+        // Mode selector functionality
+        document.getElementById('modeSelector').addEventListener('change', function(event) {
+            const mode = event.target.value;
+            let imageryProvider;
+
+            switch (mode) {
+                case 'natgeo':
+                    imageryProvider = new Cesium.ArcGisMapServerImageryProvider({
+                        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer'
+                    });
+                    break;
+                case 'osm':
+                    imageryProvider = new Cesium.OpenStreetMapImageryProvider({
+                        url: 'https://a.tile.openstreetmap.org/'
+                    });
+                    break;
+                case 'bing':
+                    imageryProvider = new Cesium.BingMapsImageryProvider({
+                        url: 'https://dev.virtualearth.net',
+                        key:  'YOUR_BING_MAPS_KEY',
+                        mapStyle: Cesium.BingMapsStyle.AERIAL
+                    });
+                    break;
+            }
+
+            viewer.imageryLayers.removeAll();
+            viewer.imageryLayers.addImageryProvider(imageryProvider);
+        });
+
+        // Toggle globe functionality
+        let isGlobeVisible = true;
+        document.getElementById('toggleGlobe').addEventListener('click', function() {
+            const globeContainer = document.getElementById('globeContainer');
+            const toggleArrow = this.querySelector('.toggle-arrow');
+            const modeSelector = document.getElementById('modeSelector');
+            
+            if (isGlobeVisible) {
+                globeContainer.classList.remove('md:w-1/2');
+                globeContainer.classList.add('md:w-0');
+                toggleArrow.classList.add('closed');
+                modeSelector.style.display = 'none';
+            } else {
+                globeContainer.classList.remove('md:w-0');
+                globeContainer.classList.add('md:w-1/2');
+                toggleArrow.classList.remove('closed');
+                modeSelector.style.display = 'block';
+            }
+            isGlobeVisible = !isGlobeVisible;
+        });
+    </script>
+</body>
+</html>
