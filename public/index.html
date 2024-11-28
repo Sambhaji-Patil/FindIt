@@ -25,7 +25,6 @@
     </script>
 </head>
 <body class="min-h-screen bg-gray-100">
-    <!-- Project name -->
     <div class="project-title text-center py-4">
         <h1 class="text-4xl font-bold text-white bg-primary bg-opacity-70 rounded-lg inline-block px-6 py-2 shadow-lg">FINDIT</h1>
     </div>
@@ -72,7 +71,7 @@
         // Your Cesium ion access token
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiYjYyNTc2My0zODZlLTQ2YzAtYjVhYy0wZGZmNTgzYTk4MjMiLCJpZCI6MjQ5MjgwLCJpYXQiOjE3MjkzMjc5NzZ9.104hJ5y6X9ukGymb_Iqy_mI3PReD00m1bnRqdoNPcd4';
 
-        // Initialize the Cesium Viewer
+        // Initializing the Cesium Viewer
         const viewer = new Cesium.Viewer('cesiumContainer', {
             imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
                 url: 'https://services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer'
@@ -87,7 +86,7 @@
             fullscreenButton: false
         });
 
-        // Remove the default Cesium logo
+        // Removing the default Cesium logo
         viewer._cesiumWidget._creditContainer.style.display = "none";
 
         // Geocoding function (place name to coordinates)
@@ -165,12 +164,12 @@
                 const response = await axios.get(`/api/tourism?lat=${latitude}&lon=${longitude}`);
                 const tourismData = response.data;
 
-                // Clear existing data
+                // Clears existing data
                 document.getElementById('restaurantsData').innerHTML = '<h3 class="text-xl font-bold mb-2">Restaurants</h3>';
                 document.getElementById('atmData').innerHTML = '<h3 class="text-xl font-bold mb-2">ATMs</h3>';
                 document.getElementById('fuelData').innerHTML = '<h3 class="text-xl font-bold mb-2">Fuel Stations</h3>';
 
-                // Display restaurants
+                // To Display restaurants
                 tourismData.restaurants.forEach(restaurant => {
                     const name = restaurant.properties.name || 'Unknown restaurant';
                     const address = restaurant.properties.formatted || 'Address not available';
@@ -186,7 +185,7 @@
                     `;
                 });
 
-                // Display ATMs
+                // To Display ATMs
                 tourismData.atms.forEach(atm => {
                     const name = atm.properties.name || 'ATM';
                     const address = atm.properties.formatted || 'Address not available';
@@ -198,7 +197,7 @@
                     `;
                 });
 
-                // Display fuel stations
+                // To Display fuel stations
                 tourismData.fuelStations.forEach(fuel => {
                     const name = fuel.properties.name || 'Fuel Station';
                     const address = fuel.properties.formatted || 'Address not available';
