@@ -1,8 +1,6 @@
 
 name: Spam Detection
 on:
-  schedule:
-    - cron: '*/5 * * * *'  
   workflow_dispatch: 
 
 jobs:
@@ -24,7 +22,7 @@ jobs:
           key: cursor-cache
 
       - name: Spam Detection
-        uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.1 
+        uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.2 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CURSOR_FILE: .github/cache/last_cursor.txt
