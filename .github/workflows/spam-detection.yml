@@ -1,8 +1,6 @@
 name: Spam Detection
-
 on:
   workflow_dispatch:
-
 jobs:
   detect-spam:
     runs-on: ubuntu-latest
@@ -10,13 +8,17 @@ jobs:
       issues: write
       pull-requests: write
       discussions: write
-      contents: write 
-
+      contents: read
     steps:
-      - uses: actions/checkout@v3 
+      - uses: actions/checkout@v3
+      - name: Cache cursor
+        uses: actions/cache@v3
         with:
-          fetch-depth: 0 
+          path: .github/cursor_cache
+          key: ${{ runner.os }}-cursor-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-cursor-
       - name: Spam Detection
-        uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.2 
+        uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
