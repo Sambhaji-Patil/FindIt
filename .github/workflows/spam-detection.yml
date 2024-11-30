@@ -10,51 +10,11 @@ jobs:
       issues: write
       pull-requests: write
       discussions: write
-      contents: read
+      contents: read 
 
     steps:
-      - uses: actions/checkout@v3
-
-      # Restore cache (first time this will be a miss)
-      - name: Restore Cache
-        id: restore_cache
-        uses: actions/cache@v3
-        with:
-          path: .github/cache
-          key: cursor-cache
-          restore-keys: |
-            cursor-cache
-
-      # Ensure the cursor file exists
-      - name: Get Latest Cursor
-        run: |
-          mkdir -p .github/cache
-          if [ ! -f ".github/cache/last_cursor.txt" ]; then
-            echo "No previous cursor found. Starting fresh."
-            echo "0" > .github/cache/last_cursor.txt  # Initialize with 0 or an appropriate start value
-          fi
-
-      # Spam detection step
+      - uses: actions/checkout@v3  
       - name: Spam Detection
-        uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.2
+        uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.2 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CURSOR_FILE: .github/cache/last_cursor.txt
-
-      # Save the new cursor (modify based on spam detection output)
-      - name: Save New Cursor
-        run: |
-          # Here, you should replace the cursor value based on your spam detection logic.
-          echo "NEW_CURSOR_VALUE" > .github/cache/last_cursor.txt
-
-      # Remove old cache (to clean up for the next run)
-      - name: Remove Old Cache
-        run: |
-          rm -rf .github/cache
-
-      # Save new cache (with the updated cursor file)
-      - name: Save Cache
-        uses: actions/cache@v3
-        with:
-          path: .github/cache
-          key: cursor-cache
