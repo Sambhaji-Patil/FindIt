@@ -1,0 +1,21 @@
+
+name: Spam Detection
+on:
+  schedule:
+    - cron: 'None'
+  workflow_dispatch:
+
+jobs:
+  detect-spam:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      discussions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - name: Spam Detection
+        uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.2
+        env:
+          GITHUB_TOKEN: ${ secrets.GITHUB_TOKEN }
