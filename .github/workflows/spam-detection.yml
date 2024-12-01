@@ -1,6 +1,8 @@
 name: Spam Detection
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'  # Run every day at 9AM.
+  workflow_dispatch: # Allows you to manually trigger the workflow as needed. 
 jobs:
   detect-spam:
     runs-on: ubuntu-latest
