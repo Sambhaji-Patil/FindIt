@@ -2,8 +2,8 @@
 name: Spam Detection
 on:
   schedule:
-    - cron: 'None'
-  workflow_dispatch:
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allows you to manually trigger the workflow as needed. 
 
 jobs:
   detect-spam:
@@ -15,7 +15,14 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v3
+      - name: Cache cursor
+        uses: actions/cache@v3
+        with:
+          path: .github/cursor_cache
+          key: ${{ runner.os }}-cursor-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-cursor-
       - name: Spam Detection
         uses: Sambhaji-Patil/Auto-Hide-Spam-Comments@v1.2
         env:
-          GITHUB_TOKEN: ${ secrets.GITHUB_TOKEN }
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
