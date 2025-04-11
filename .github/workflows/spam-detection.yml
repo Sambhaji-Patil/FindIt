@@ -2,7 +2,7 @@
 name: Spam Detection
 on:
   schedule:
-    - cron: '0 11 * * 1'
+    - cron: '0 0 1 * *'
   workflow_dispatch: # Allows you to manually trigger the workflow as needed. 
 
 jobs:
